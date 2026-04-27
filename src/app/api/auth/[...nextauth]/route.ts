@@ -14,7 +14,7 @@ async function refreshAccessToken(token: any) {
       client_secret: process.env.AZURE_AD_CLIENT_SECRET!,
       grant_type: "refresh_token",
       refresh_token: token.refreshToken,
-      scope: `openid profile email offline_access api://6a3e6083-1a43-439e-b66a-141dd7e13f70/access_as_user`,
+      scope: `openid profile email offline_access ${process.env.AZURE_SCOPE}`,
     });
 
     const response = await fetch(url, {
@@ -58,7 +58,7 @@ const handler = NextAuth({
       tenantId: process.env.AZURE_AD_TENANT_ID!,
       authorization: {
         params: {
-          scope: `openid profile email offline_access api://6a3e6083-1a43-439e-b66a-141dd7e13f70/access_as_user`,
+          scope: `openid profile email offline_access ${process.env.AZURE_SCOPE}`,
         },
       },
     }),
