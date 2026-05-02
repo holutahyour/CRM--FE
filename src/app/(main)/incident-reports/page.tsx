@@ -10,6 +10,7 @@ import { Incident, STATUS_FILTERS, MOCK_INCIDENTS } from "./_components/types";
 import IncidentCard from "./_components/IncidentCard";
 import ReportIncidentDrawer from "./_components/ReportIncidentDrawer";
 import { HStack } from "@chakra-ui/react";
+import { toaster } from "@/components/ui/chakra-toaster";
 import {
   PaginationItems,
   PaginationNextTrigger,
@@ -112,16 +113,24 @@ export default function IncidentReportsPage() {
   const handleMarkInProgress = async (id: string) => {
     setActionBusy(id);
     try {
-      await apiHandler.incidents.markInProgress(id);
+      if (USE_MOCK) {
+        setIncidents((prev) =>
+          prev.map((i) => i.id === id ? { ...i, status: "in_progress" } : i)
+        );
+        return;
+      }
+      const res = await apiHandler.incidents.markInProgress(id);
+      if (res && res.isSuccess === false) {
+        toaster.error({ title: "Error", description: res.message || "Failed to mark as in progress" });
+        return;
+      }
       setIncidents((prev) =>
         prev.map((i) => i.id === id ? { ...i, status: "in_progress" } : i)
       );
-    } catch (e) {
+      toaster.success({ title: "Success", description: "Incident marked as in progress" });
+    } catch (e: any) {
       console.error("markInProgress failed", e);
-      // optimistic update for mock
-      setIncidents((prev) =>
-        prev.map((i) => i.id === id ? { ...i, status: "in_progress" } : i)
-      );
+      toaster.error({ title: "Error", description: e.message || "An unexpected error occurred" });
     } finally {
       setActionBusy(null);
     }
@@ -136,7 +145,21 @@ export default function IncidentReportsPage() {
     if (!resolveTarget) return;
     setActionBusy(resolveTarget);
     try {
-      await apiHandler.incidents.markResolved(resolveTarget, resolution);
+      if (USE_MOCK) {
+        setIncidents((prev) =>
+          prev.map((i) =>
+            i.id === resolveTarget
+              ? { ...i, status: "resolved", resolution, resolvedAt: new Date().toISOString() }
+              : i
+          )
+        );
+        return;
+      }
+      const res = await apiHandler.incidents.markResolved(resolveTarget, resolution);
+      if (res && res.isSuccess === false) {
+        toaster.error({ title: "Error", description: res.message || "Failed to mark as resolved" });
+        return;
+      }
       setIncidents((prev) =>
         prev.map((i) =>
           i.id === resolveTarget
@@ -144,15 +167,10 @@ export default function IncidentReportsPage() {
             : i
         )
       );
-    } catch (e) {
-      // optimistic update for mock
-      setIncidents((prev) =>
-        prev.map((i) =>
-          i.id === resolveTarget
-            ? { ...i, status: "resolved", resolution, resolvedAt: new Date().toISOString() }
-            : i
-        )
-      );
+      toaster.success({ title: "Success", description: "Incident marked as resolved" });
+    } catch (e: any) {
+      console.error("confirmResolved failed", e);
+      toaster.error({ title: "Error", description: e.message || "An unexpected error occurred" });
     } finally {
       setActionBusy(null);
       setResolveTarget(null);
@@ -202,9 +220,8 @@ export default function IncidentReportsPage() {
       <ReportIncidentDrawer
         departments={departments}
         onCreated={(incident) => {
-          skipFetchRef.current = true;
-          setIncidents((prev) => [incident, ...prev]);
-          setTotalRecords((prev) => prev + 1);
+          skipFetchRef.current = false;
+          fetchData();
         }}
       />
 

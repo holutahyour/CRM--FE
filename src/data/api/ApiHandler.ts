@@ -224,6 +224,10 @@ const requisitions = {
 
 const departments = {
   list: () => requests.get<any>(`/departments`),
+  create: (data: { name: string; code: string; headName?: string; description?: string; budget?: number }) =>
+    requests.post<any>(`/departments`, data),
+  update: (id: string, data: { name: string; code: string; headName?: string; description?: string; budget?: number }) =>
+    requests.put<any>(`/departments/${id}`, data),
 };
 
 const categories = {
@@ -282,22 +286,93 @@ const itemRequests = {
     requests.post<any>("/itemrequests", data),
 };
 
+const SEVERITY_MAP: Record<number, string> = { 0: "low", 1: "medium", 2: "high", 3: "critical" };
+const STATUS_MAP: Record<number, string> = { 0: "open", 1: "in_progress", 2: "resolved" };
+
+const mapIncident = (item: any) => {
+  if (!item) return item;
+
+  let severity = "medium";
+  if (typeof item.priority === "number") severity = SEVERITY_MAP[item.priority] || "medium";
+  else if (typeof item.priority === "string") {
+    const s = item.priority.toLowerCase();
+    if (s === "low" || s === "0") severity = "low";
+    else if (s === "medium" || s === "1") severity = "medium";
+    else if (s === "high" || s === "2") severity = "high";
+    else if (s === "critical" || s === "3") severity = "critical";
+  }
+
+  let status = "open";
+  if (typeof item.status === "number") status = STATUS_MAP[item.status] || "open";
+  else if (typeof item.status === "string") {
+    const s = item.status.toLowerCase();
+    if (s === "open" || s === "0") status = "open";
+    else if (s === "inprogress" || s === "in_progress" || s === "1") status = "in_progress";
+    else if (s === "resolved" || s === "2") status = "resolved";
+  }
+
+  return {
+    ...item,
+    deviceName: item.deviceType || item.deviceName,
+    deviceCode: item.deviceId || item.deviceCode,
+    severity: severity,
+    status: status,
+    description: item.issueDescription || item.description,
+    createdAt: item.date || item.createdOn || item.createdAt,
+    reportedByName: item.reportedByName || item.createdBy,
+    resolution: item.resolution,
+    resolvedAt: item.lastModifiedOn || item.lastModifiedAt, // Use updated timestamp
+  };
+};
+
 const incidents = {
-  list: (params?: { status?: string; page?: number; pageSize?: number }) => {
+  list: async (params?: { status?: string; page?: number; pageSize?: number }) => {
     const query = new URLSearchParams();
-    if (params?.status) query.append("filter", `status=${params.status}`);
+    if (params?.status) {
+      const statusInt = { open: 0, in_progress: 1, resolved: 2 }[params.status] ?? 0;
+      query.append("filter", `status=${statusInt}`);
+    }
     if (params?.page) query.append("page", params.page.toString());
     if (params?.pageSize) query.append("pageSize", params.pageSize.toString());
-    return requests.get<any>(`/incidents?${query.toString()}`);
+    const res = await requests.get<any>(`/incidents?${query.toString()}`);
+    if (res?.isSuccess && res.content) {
+      if (Array.isArray(res.content)) {
+        res.content = res.content.map(mapIncident);
+      } else if (res.content.items && Array.isArray(res.content.items)) {
+        res.content.items = res.content.items.map(mapIncident);
+      } else if (res.content.data && Array.isArray(res.content.data)) {
+        res.content.data = res.content.data.map(mapIncident);
+      }
+    }
+    return res;
   },
-  create: (data: {
+  create: async (data: {
     deviceName: string;
     deviceCode: string;
     severity: string;
     description: string;
     reportedBy?: string;
     departmentId?: string;
-  }) => requests.post<any>("/incidents", data),
+    date?: string;
+  }) => {
+    const priority = { low: 0, medium: 1, high: 2, critical: 3 }[data.severity] ?? 1;
+
+    const res = await requests.post<any>("/incidents", {
+      deviceType: data.deviceName,
+      deviceId: data.deviceCode,
+      priority: priority,
+      issueDescription: data.description,
+      departmentId: data.departmentId,
+      date: data.date
+    });
+
+    if (res?.isSuccess && res.content) {
+      res.content = mapIncident(res.content);
+    } else if (res && res.id) {
+      Object.assign(res, mapIncident(res));
+    }
+    return res;
+  },
   markInProgress: (id: string) => requests.put<any>(`/incidents/${id}/in-progress`, {}),
   markResolved: (id: string, resolution: string) => requests.put<any>(`/incidents/${id}/resolve`, { resolution }),
 };
@@ -306,9 +381,9 @@ const incidents = {
 const monthlyReports = {
   list: (params?: { month?: string; year?: string; departmentId?: string; page?: number; pageSize?: number }) => {
     const query = new URLSearchParams();
-    if (params?.month) query.append("month", params.month.toString());
-    if (params?.year) query.append("year", params.year.toString());
-    if (params?.departmentId) query.append("departmentId", params.departmentId);
+    if (params?.month) query.append("filter", `month=${params.month}`);
+    if (params?.year) query.append("filter", `year=${params.year}`);
+    if (params?.departmentId) query.append("filter", `departmentId=${params.departmentId}`);
     if (params?.page) query.append("page", params.page.toString());
     if (params?.pageSize) query.append("pageSize", params.pageSize.toString());
     return requests.get<any>(`/monthlyreports?${query.toString()}`);

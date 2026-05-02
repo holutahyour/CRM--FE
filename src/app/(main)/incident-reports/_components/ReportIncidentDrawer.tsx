@@ -11,6 +11,7 @@ import { useQuery } from "@/hooks/use-query";
 import { useModifyQuery } from "@/hooks/use-modify-query";
 import { APP_INCIDENT_DRAWER } from "@/lib/routes";
 import { VStack } from "@chakra-ui/react";
+import { toaster } from "@/components/ui/chakra-toaster";
 import { Incident } from "./types";
 
 const reportIncidentSchema = z.object({
@@ -18,7 +19,8 @@ const reportIncidentSchema = z.object({
   deviceCode:   z.string().min(1, "Device code/ID is required"),
   severity:     z.enum(["low", "medium", "high", "critical"], { required_error: "Severity is required" }),
   description:  z.string().min(5, "Please describe the issue"),
-  departmentId: z.string().optional(),
+  departmentId: z.string().min(1, "Department is required"),
+  date:         z.string().min(1, "Date is required"),
 });
 
 type ReportIncidentValues = z.infer<typeof reportIncidentSchema>;
@@ -47,7 +49,7 @@ export default function ReportIncidentDrawer({ departments, onCreated }: ReportI
     reset,
   } = useForm<ReportIncidentValues>({
     resolver: zodResolver(reportIncidentSchema),
-    defaultValues: { deviceName: "", deviceCode: "", severity: "medium", description: "", departmentId: "" },
+    defaultValues: { deviceName: "", deviceCode: "", severity: "medium", description: "", departmentId: "", date: new Date().toISOString().split('T')[0] },
   });
 
   const onSubmit = handleSubmit(async (values) => {
@@ -58,25 +60,32 @@ export default function ReportIncidentDrawer({ departments, onCreated }: ReportI
         severity:     values.severity,
         description:  values.description,
         departmentId: values.departmentId || undefined,
+        date:         values.date ? new Date(values.date).toISOString() : undefined,
       });
-      const created: Incident = res?.isSuccess && res.content
-        ? res.content
-        : res?.id
-          ? res
-          : {
-              id: `temp-${Date.now()}`,
-              deviceName:    values.deviceName,
-              deviceCode:    values.deviceCode,
-              severity:      values.severity,
-              status:        "open",
-              description:   values.description,
-              departmentName: departments.find(d => d.id === values.departmentId)?.name,
-            } as Incident;
+
+      if (res && res.isSuccess === false) {
+        toaster.error({
+          title: "Error",
+          description: res.message || "Failed to report incident",
+        });
+        return;
+      }
+
+      toaster.success({
+        title: "Success",
+        description: "Incident reported successfully",
+      });
+
+      const created: Incident = res?.content || res;
       onCreated(created);
       reset();
       discardChange();
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to report incident", e);
+      toaster.error({
+        title: "Error",
+        description: e.message || "An unexpected error occurred",
+      });
     }
   });
 
@@ -152,21 +161,42 @@ export default function ReportIncidentDrawer({ departments, onCreated }: ReportI
           )}
         </div>
 
-        {/* Department */}
-        {departments.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-            <select
-              {...register("departmentId")}
-              className={`${inputBase} bg-white ${inputOk}`}
-            >
-              <option value="">Select a department...</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
+        {/* Department and Date */}
+        <div className="grid grid-cols-2 gap-4">
+          {departments.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Department <span className="text-red-500">*</span>
+              </label>
+              <select
+                {...register("departmentId")}
+                className={`${inputBase} bg-white ${errors.departmentId ? inputErr : inputOk}`}
+              >
+                <option value="">Select a department...</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+              {errors.departmentId && (
+                <p className="text-xs text-red-500 mt-1">{errors.departmentId.message}</p>
+              )}
+            </div>
+          )}
+
+          <div className={departments.length === 0 ? "col-span-2" : ""}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Date <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              {...register("date")}
+              className={`${inputBase} ${errors.date ? inputErr : inputOk}`}
+            />
+            {errors.date && (
+              <p className="text-xs text-red-500 mt-1">{errors.date.message}</p>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Issue Description */}
         <div>
