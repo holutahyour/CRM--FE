@@ -113,12 +113,21 @@ const requests = {
 };
 
 const users = {
-  list: () => requests.get<IApiResponse<IUser>>(`/users`),
+  list: (params?: { page?: number; pageSize?: number; search?: string; isOnboarded?: boolean }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append("page", params.page.toString());
+    if (params?.pageSize) query.append("pageSize", params.pageSize.toString());
+    if (params?.search) query.append("search", params.search);
+    if (params?.isOnboarded !== undefined) query.append("isOnboarded", params.isOnboarded.toString());
+    return requests.get<IApiResponse<IUser>>(`/users?${query.toString()}`);
+  },
   get_by_id: (id: string) => requests.get<IApiResponse<IUser>>(`/users?id=${id}`),
-  create: (data: IUser) =>
-    requests.post<IUser>("/users", data),
-  update: (id: string, data: IUser) =>
-    requests.put<IUser>(`/users?id=${id}`, data),
+  create: (data: IUser) => requests.post<IUser>("/users", data),
+  update: (id: string, data: IUser) => requests.put<IUser>(`/users?id=${id}`, data),
+  onboard: (id: string) => requests.patch<any>(`/users/${id}/onboard`),
+  toggleActive: (id: string, isActive: boolean) =>
+    requests.put<any>(`/users/${id}/toggle-active`, { isActive }),
+  getUnauthorizedLogs: () => requests.get<any>(`/users/unauthorized-logs`),
 };
 
 // const countries = {
@@ -273,6 +282,49 @@ const itemRequests = {
     requests.post<any>("/itemrequests", data),
 };
 
+const incidents = {
+  list: (params?: { status?: string; page?: number; pageSize?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.append("filter", `status=${params.status}`);
+    if (params?.page) query.append("page", params.page.toString());
+    if (params?.pageSize) query.append("pageSize", params.pageSize.toString());
+    return requests.get<any>(`/incidents?${query.toString()}`);
+  },
+  create: (data: {
+    deviceName: string;
+    deviceCode: string;
+    severity: string;
+    description: string;
+    reportedBy?: string;
+    departmentId?: string;
+  }) => requests.post<any>("/incidents", data),
+  markInProgress: (id: string) => requests.put<any>(`/incidents/${id}/in-progress`, {}),
+  markResolved: (id: string, resolution: string) => requests.put<any>(`/incidents/${id}/resolve`, { resolution }),
+};
+
+
+const monthlyReports = {
+  list: (params?: { month?: string; year?: string; departmentId?: string; page?: number; pageSize?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.month) query.append("month", params.month.toString());
+    if (params?.year) query.append("year", params.year.toString());
+    if (params?.departmentId) query.append("departmentId", params.departmentId);
+    if (params?.page) query.append("page", params.page.toString());
+    if (params?.pageSize) query.append("pageSize", params.pageSize.toString());
+    return requests.get<any>(`/monthlyreports?${query.toString()}`);
+  },
+  create: (data: {
+    goalTitle: string;
+    targetValue: number;
+    achievedValue: number;
+    month: string;
+    year: string;
+    notes?: string;
+    departmentId?: string;
+  }) => requests.post<any>("/monthlyreports", data),
+  getStats: (year?: string) => requests.get<any>(`/monthlyreports/stats${year ? `?year=${year}` : ""}`),
+};
+
 const apiHandler = {
   users,
   menus,
@@ -281,6 +333,8 @@ const apiHandler = {
   dashboard,
   requisitions,
   itemRequests,
+  incidents,
+  monthlyReports,
   items,
   departments,
   categories,

@@ -19,7 +19,7 @@ export const createItemSchema = z.object({
   // Keep these if you want to initialize stock upon creation
   initialStock: z.number().min(0, "Stock cannot be negative").optional(),
   location: z.string().optional(), // Kept for backward compatibility
-  locationId: z.string().min(1, "Location is required"),
+  locationId: z.string().optional(),
   itemLocation: z.string().optional(),
 });
 

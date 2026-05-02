@@ -225,29 +225,6 @@ export default function AddItemDrawer({ onCreated }: AddItemDrawerProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cost Price</label>
-            <input
-              {...register("costPrice", { valueAsNumber: true })}
-              type="number"
-              step="0.01"
-              min="0"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price</label>
-            <input
-              {...register("sellingPrice", { valueAsNumber: true })}
-              type="number"
-              step="0.01"
-              min="0"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-colors"
-            />
-          </div>
-        </div>
-
         <div className="flex gap-6 items-center py-2">
           <label className="flex items-center gap-3 w-auto cursor-pointer">
             <input type="checkbox" className="w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500" {...register("batchTracked")} />

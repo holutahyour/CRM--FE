@@ -38,9 +38,9 @@ export default function CreateRequisitionForm({ onCreated }: CreateRequisitionFo
           } else if (Array.isArray(res)) {
             setDepartments(res);
           } else if (res?.items) {
-             setDepartments(res.items);
+            setDepartments(res.items);
           } else if (res?.data) {
-             setDepartments(res.data);
+            setDepartments(res.data);
           }
         } catch (e) {
           console.error("Failed to fetch departments", e);
@@ -116,11 +116,10 @@ export default function CreateRequisitionForm({ onCreated }: CreateRequisitionFo
           <input
             {...register("title")}
             placeholder="Requisition title"
-            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
-              errors.title
-                ? "border-red-400 focus:ring-red-300"
-                : "border-gray-200 focus:ring-green-400 focus:border-green-400"
-            }`}
+            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${errors.title
+              ? "border-red-400 focus:ring-red-300"
+              : "border-gray-200 focus:ring-green-400 focus:border-green-400"
+              }`}
           />
           {errors.title && (
             <p className="text-xs text-red-500 mt-1">{errors.title.message}</p>
@@ -134,11 +133,10 @@ export default function CreateRequisitionForm({ onCreated }: CreateRequisitionFo
           </label>
           <select
             {...register("departmentId")}
-            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors bg-white ${
-              errors.departmentId
-                ? "border-red-400 focus:ring-red-300"
-                : "border-gray-200 focus:ring-green-400 focus:border-green-400"
-            }`}
+            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors bg-white ${errors.departmentId
+              ? "border-red-400 focus:ring-red-300"
+              : "border-gray-200 focus:ring-green-400 focus:border-green-400"
+              }`}
             disabled={loadingDepts}
           >
             <option value="">Select a department...</option>
@@ -156,7 +154,7 @@ export default function CreateRequisitionForm({ onCreated }: CreateRequisitionFo
         {/* Amount */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Amount (₦) <span className="text-red-500">*</span>
+            Amount (₦)
           </label>
           <input
             {...register("amount", { valueAsNumber: true })}
@@ -164,11 +162,10 @@ export default function CreateRequisitionForm({ onCreated }: CreateRequisitionFo
             step="0.01"
             min="0"
             placeholder="0.00"
-            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${
-              errors.amount
-                ? "border-red-400 focus:ring-red-300"
-                : "border-gray-200 focus:ring-green-400 focus:border-green-400"
-            }`}
+            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-colors ${errors.amount
+              ? "border-red-400 focus:ring-red-300"
+              : "border-gray-200 focus:ring-green-400 focus:border-green-400"
+              }`}
           />
           {errors.amount && (
             <p className="text-xs text-red-500 mt-1">{errors.amount.message}</p>
@@ -176,7 +173,7 @@ export default function CreateRequisitionForm({ onCreated }: CreateRequisitionFo
         </div>
 
         {/* Description */}
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Description
           </label>
@@ -186,7 +183,7 @@ export default function CreateRequisitionForm({ onCreated }: CreateRequisitionFo
             placeholder="Provide details about this requisition"
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-colors"
           />
-        </div>
+        </div> */}
       </VStack>
     </AppDrawer>
   );
