@@ -66,8 +66,10 @@ function AppDrawer({
   const cancelDialogUrl = useModifyQuery(null, searchParams, [{ key: DISCARD_DIALOG_KEY, value: 'true' }], 'set')
   const cancelRedirectUrl = useModifyQuery(null, searchParams, [{ key: DISCARD_DIALOG_KEY }])
 
-  const handleClose = () => {
-    router.push(redirectUri ?? APP_DEFAULT_PAGE())
+  const handleClose = (e?: { open: boolean }) => {
+    if (!e || !e.open) {
+      router.push(redirectUri ?? APP_DEFAULT_PAGE())
+    }
   }
 
   const discardChange = () => {

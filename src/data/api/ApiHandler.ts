@@ -121,9 +121,9 @@ const users = {
     if (params?.isOnboarded !== undefined) query.append("isOnboarded", params.isOnboarded.toString());
     return requests.get<IApiResponse<IUser>>(`/users?${query.toString()}`);
   },
-  get_by_id: (id: string) => requests.get<IApiResponse<IUser>>(`/users?id=${id}`),
+  get_by_id: (id: string) => requests.get<IApiResponse<IUser>>(`/users/${id}`),
   create: (data: IUser) => requests.post<IUser>("/users", data),
-  update: (id: string, data: IUser) => requests.put<IUser>(`/users?id=${id}`, data),
+  update: (id: string, data: any) => requests.put<any>(`/users?id=${id}`, data),
   onboard: (id: string) => requests.patch<any>(`/users/${id}/onboard`),
   toggleActive: (id: string, isActive: boolean) =>
     requests.put<any>(`/users/${id}/toggle-active`, { isActive }),
@@ -165,6 +165,10 @@ const menus = {
     requests.post<IMenu>("/menus", data),
   my_menus: () =>
     requests.get<IApiResponse<IMenu[]>>(`/menus/my-menus`),
+};
+
+const roles = {
+  list: () => requests.get<any>(`/roles`),
 };
 
 const notification = {
@@ -402,6 +406,7 @@ const monthlyReports = {
 
 const apiHandler = {
   users,
+  roles,
   menus,
   erpSettings,
   notification,

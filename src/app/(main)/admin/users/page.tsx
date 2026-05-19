@@ -3,13 +3,13 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Users, Plus, Search, Loader, AlertTriangle,
-  UserCheck, UserX,
+  UserCheck, UserX, Edit2,
 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { format } from "date-fns";
 import apiHandler from "@/data/api/ApiHandler";
 import { useModifyQuery } from "@/hooks/use-modify-query";
-import { APP_ADD_USER_DRAWER } from "@/lib/routes";
+import { APP_UPDATE_USER_DRAWER } from "@/lib/routes";
 import {
   CrmUser,
   UnauthorizedLog,
@@ -17,7 +17,7 @@ import {
   MOCK_USERS,
   MOCK_UNAUTHORIZED_LOGS,
 } from "./_components/types";
-import AddUserDrawer from "./_components/AddUserDrawer";
+import UpdateUserDrawer from "./_components/UpdateUserDrawer";
 import { HStack } from "@chakra-ui/react";
 import {
   PaginationItems,
@@ -49,12 +49,7 @@ export default function UserManagementPage() {
   const [pagination, setPagination]     = useState({ pageIndex: 0, pageSize: 10 });
   const skipFetchRef                    = useRef(false);
 
-  const drawerUrl = useModifyQuery(
-    null,
-    searchParams,
-    [{ key: APP_ADD_USER_DRAWER, value: "true" }],
-    "set"
-  );
+  const pathName = usePathname();
 
   const fetchData = useCallback(async () => {
     if (skipFetchRef.current) { skipFetchRef.current = false; return; }
@@ -162,11 +157,10 @@ export default function UserManagementPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Add User Drawer */}
-      <AddUserDrawer
-        onCreated={(user) => {
+      <UpdateUserDrawer
+        onUpdated={(user) => {
           skipFetchRef.current = true;
-          setUsers(prev => [user, ...prev]);
-          setTotalRecords(prev => prev + 1);
+          setUsers(prev => prev.map(u => u.id === user.id ? user : u));
         }}
       />
 
@@ -176,13 +170,6 @@ export default function UserManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
           <p className="text-sm text-gray-500">Manage user access and track activity</p>
         </div>
-        <button
-          onClick={() => router.push(drawerUrl)}
-          className="flex items-center gap-2 bg-[#7cc843] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#68a638] transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Add User
-        </button>
       </div>
 
       {/* Summary Cards */}
@@ -396,6 +383,17 @@ export default function UserManagementPage() {
                             u.isActive ? "translate-x-4" : "translate-x-0"
                           }`}
                         />
+                      </button>
+                      <button
+                        onClick={() => {
+                          const newParams = new URLSearchParams(searchParams.toString());
+                          newParams.set(APP_UPDATE_USER_DRAWER, u.id);
+                          router.push(`${pathName}?${newParams.toString()}`);
+                        }}
+                        className="p-1 text-gray-500 hover:text-green-600 transition-colors ml-2"
+                        title="Edit user"
+                      >
+                        <Edit2 className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>
