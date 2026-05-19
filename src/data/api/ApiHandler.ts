@@ -5,6 +5,7 @@ import { toaster } from "@/components/ui/chakra-toaster";
 import { IApiResponse } from "../interface/IApiResponse";
 import { IMenu } from "../sidebar-data";
 import { getSession } from "next-auth/react";
+import { IWorkflowTemplate, IWorkflowStepRequest, IApprovalHistory } from "../interface/IWorkflow";
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -224,6 +225,19 @@ const requisitions = {
   reject: (id: string, reason: string) => requests.put<any>(`/requisitions/${id}/reject`, { reason }),
   create: (data: { title: string; amount: number; description: string; departmentId: string }) =>
     requests.post<any>("/requisitions", data),
+  getApprovalHistory: (id: string) =>
+    requests.get<IApiResponse<IApprovalHistory>>(`/requisitions/${id}/approval-history`),
+  createWithFile: async (formData: FormData): Promise<any> => {
+    try {
+      const response = await axiosInstance.post<any>("/requisitions", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("POST request failed:", error);
+      throw error;
+    }
+  },
 };
 
 const departments = {
@@ -288,6 +302,8 @@ const itemRequests = {
   reject: (id: string, reason: string) => requests.put<any>(`/itemrequests/${id}/reject`, { reason }),
   create: (data: { itemName: string; itemId?: string; quantity: number; purpose: string; departmentId: string }) =>
     requests.post<any>("/itemrequests", data),
+  getApprovalHistory: (id: string) =>
+    requests.get<IApiResponse<IApprovalHistory>>(`/itemrequests/${id}/approval-history`),
 };
 
 const SEVERITY_MAP: Record<number, string> = { 0: "low", 1: "medium", 2: "high", 3: "critical" };
@@ -404,6 +420,14 @@ const monthlyReports = {
   getStats: (year?: string) => requests.get<any>(`/monthlyreports/stats${year ? `?year=${year}` : ""}`),
 };
 
+const workflowTemplates = {
+  list: () => requests.get<IApiResponse<IWorkflowTemplate[]>>(`/workflows`),
+  getByType: (type: number) => requests.get<IApiResponse<IWorkflowTemplate>>(`/workflows/${type}`),
+  create: (data: Omit<IWorkflowTemplate, 'id'>) => requests.post<IApiResponse<IWorkflowTemplate>>(`/workflows`, data),
+  upsertSteps: (id: string, steps: IWorkflowStepRequest[]) =>
+    requests.put<IApiResponse<IWorkflowTemplate>>(`/workflows/${id}/steps`, steps),
+};
+
 const apiHandler = {
   users,
   roles,
@@ -420,6 +444,7 @@ const apiHandler = {
   categories,
   vendors,
   locations,
+  workflowTemplates,
   get: requests.get,
   put: requests.put,
 };
