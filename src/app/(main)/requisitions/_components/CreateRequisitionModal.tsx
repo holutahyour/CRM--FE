@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Loader, Upload, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePathname } from "next/navigation";
+import { useDropzone } from "react-dropzone";
 import { createRequisitionSchema, CreateRequisitionValues } from "@/data/schema/requisition";
 import apiHandler from "@/data/api/ApiHandler";
 import AppDrawer from "@/components/app/app-drawer";
@@ -26,6 +27,7 @@ export default function CreateRequisitionForm({ onCreated }: CreateRequisitionFo
 
   const [departments, setDepartments] = useState<any[]>([]);
   const [loadingDepts, setLoadingDepts] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -61,6 +63,17 @@ export default function CreateRequisitionForm({ onCreated }: CreateRequisitionFo
     router.push(pathName.split("?")[0]);
   };
 
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles[0]) setUploadedFile(acceptedFiles[0]);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { "application/pdf": [".pdf"], "image/*": [".png", ".jpg", ".jpeg"] },
+    maxFiles: 1,
+    maxSize: 10 * 1024 * 1024,
+  });
+
   const {
     register,
     handleSubmit,
@@ -73,17 +86,19 @@ export default function CreateRequisitionForm({ onCreated }: CreateRequisitionFo
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      const res = await apiHandler.requisitions.create({
-        title: values.title,
-        amount: values.amount,
-        description: values.description ?? "",
-        departmentId: (values.departmentId || undefined) as string,
+      const formData = new FormData();
+      formData.append("title", values.title);
+      formData.append("amount", values.amount.toString());
+      if (values.description) formData.append("description", values.description);
+      formData.append("departmentId", values.departmentId);
+      if (uploadedFile) formData.append("file", uploadedFile);
 
-      });
+      const res = await apiHandler.requisitions.createWithFile(formData);
       if (res?.isSuccess && res.content) {
         onCreated(res.content);
       }
       reset();
+      setUploadedFile(null);
       discardChange();
     } catch (e) {
       console.error("Failed to create requisition", e);
@@ -184,6 +199,43 @@ export default function CreateRequisitionForm({ onCreated }: CreateRequisitionFo
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-colors"
           />
         </div> */}
+
+        {/* File Upload */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Requisition File <span className="text-gray-400 text-xs">(optional)</span>
+          </label>
+          {uploadedFile ? (
+            <div className="flex items-center justify-between border border-green-200 bg-green-50 rounded-lg px-3 py-2">
+              <span className="text-sm text-green-700">{uploadedFile.name}</span>
+              <button
+                type="button"
+                onClick={() => setUploadedFile(null)}
+                className="text-gray-400 hover:text-red-500"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-lg px-4 py-6 text-center cursor-pointer transition-colors ${
+                isDragActive
+                  ? "border-green-400 bg-green-50"
+                  : "border-gray-200 hover:border-green-300"
+              }`}
+            >
+              <input {...getInputProps()} />
+              <Upload className="w-5 h-5 text-gray-400 mx-auto mb-1" />
+              <p className="text-xs text-gray-500">
+                {isDragActive
+                  ? "Drop file here"
+                  : "Drag & drop PDF or image, or click to browse"}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Max 10 MB</p>
+            </div>
+          )}
+        </div>
       </VStack>
     </AppDrawer>
   );
