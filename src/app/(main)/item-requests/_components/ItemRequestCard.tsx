@@ -1,13 +1,27 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Loader, CheckCircle, XCircle, Package, Building2, User2, Calendar, ShieldCheck } from "lucide-react";
 import { ItemRequest, STATUS_BADGE, fmtDate } from "./types";
+import { IApprovalHistory, IWorkflowStep, WorkflowStepStatus } from "@/data/interface/IWorkflow";
+import ApprovalWorkflowStepper from "@/components/app/ApprovalWorkflowStepper";
+import ApprovalHistoryTimeline from "@/components/app/ApprovalHistoryTimeline";
+import RejectionReasonBanner from "@/components/app/RejectionReasonBanner";
+import apiHandler from "@/data/api/ApiHandler";
 
 interface ItemRequestCardProps {
   req: ItemRequest;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   actionBusy: string | null;
+}
+
+function deriveStepStatus(step: IWorkflowStep, history: IApprovalHistory): WorkflowStepStatus {
+  const record = history.records.find(r => r.stepOrder === step.stepOrder);
+  if (!record) return step.stepOrder === history.currentStepOrder ? 'pending' : 'waiting';
+  if (record.status === 'Approved') return 'approved';
+  if (record.status === 'Rejected') return 'rejected';
+  return 'pending';
 }
 
 export default function ItemRequestCard({ req, onApprove, onReject, actionBusy }: ItemRequestCardProps) {
@@ -21,6 +35,20 @@ export default function ItemRequestCard({ req, onApprove, onReject, actionBusy }
   const busy = actionBusy === req.id;
   const itemName = req.itemName || req.title || req.name || "—";
   const purpose = req.purpose || req.description || "No purpose provided.";
+
+  const [history, setHistory] = useState<IApprovalHistory | null>(null);
+
+  useEffect(() => {
+    apiHandler.itemRequests.getApprovalHistory(req.id)
+      .then(res => { if (res?.isSuccess) setHistory(res.content); })
+      .catch(() => {});
+  }, [req.id]);
+
+  const stepperSteps = history?.workflowSteps.map(step => ({
+    name: step.stepName,
+    status: deriveStepStatus(step, history),
+  })) ?? [];
+  const rejectionNote = history?.records.find(r => r.status === 'Rejected')?.notes;
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl shadow-sm mb-4">
@@ -72,11 +100,30 @@ export default function ItemRequestCard({ req, onApprove, onReject, actionBusy }
         </div>
       </div>
 
-      {/* Rejection Reason */}
-      {statusKey === "Rejected" && req.reason && (
+      {/* Approval Workflow Stepper */}
+      {stepperSteps.length > 0 && (
+        <div className="px-6 pb-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Approval Workflow:</p>
+          <ApprovalWorkflowStepper steps={stepperSteps} />
+        </div>
+      )}
+
+      {/* Rejection Reason (from workflow history) */}
+      <RejectionReasonBanner reason={rejectionNote} />
+
+      {/* Rejection Reason (legacy inline field) */}
+      {statusKey === "Rejected" && req.reason && !rejectionNote && (
         <div className="mx-6 mb-6 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
           <p className="text-xs font-semibold text-red-600 mb-0.5">Rejection Reason:</p>
           <p className="text-sm text-red-500">{req.reason}</p>
+        </div>
+      )}
+
+      {/* Approval History Timeline */}
+      {history && history.records.length > 0 && (
+        <div className="px-6 pb-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Approval History:</p>
+          <ApprovalHistoryTimeline records={history.records} />
         </div>
       )}
 

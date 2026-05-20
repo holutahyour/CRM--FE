@@ -12,6 +12,8 @@ export interface Requisition {
   departmentName?: string;
   actionedBy?: string;
   actionedByName?: string;
+  fileUrl?: string;
+  fileOriginalName?: string;
 }
 
 export const STATUS_BADGE: Record<string, { label: string; className: string }> = {

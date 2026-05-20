@@ -1,7 +1,13 @@
 "use client";
 
-import { Loader, CheckCircle, XCircle, Building2, User, Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Loader, CheckCircle, XCircle, Building2, User, Calendar, FileText } from "lucide-react";
 import { Requisition, STATUS_BADGE, fmt, fmtDate } from "./types";
+import { IApprovalHistory, IWorkflowStep, WorkflowStepStatus } from "@/data/interface/IWorkflow";
+import ApprovalWorkflowStepper from "@/components/app/ApprovalWorkflowStepper";
+import ApprovalHistoryTimeline from "@/components/app/ApprovalHistoryTimeline";
+import RejectionReasonBanner from "@/components/app/RejectionReasonBanner";
+import apiHandler from "@/data/api/ApiHandler";
 
 interface RequisitionCardProps {
   req: Requisition;
@@ -10,12 +16,34 @@ interface RequisitionCardProps {
   actionBusy: string | null;
 }
 
+function deriveStepStatus(step: IWorkflowStep, history: IApprovalHistory): WorkflowStepStatus {
+  const record = history.records.find(r => r.stepOrder === step.stepOrder);
+  if (!record) return step.stepOrder === history.currentStepOrder ? 'pending' : 'waiting';
+  if (record.status === 'Approved') return 'approved';
+  if (record.status === 'Rejected') return 'rejected';
+  return 'pending';
+}
+
 export default function RequisitionCard({ req, onApprove, onReject, actionBusy }: RequisitionCardProps) {
   const badge = STATUS_BADGE[req.status] ?? STATUS_BADGE.Pending;
   const dept = req.department?.name || req.departmentName || "—";
   const date = fmtDate(req.date || req.createdAt);
   const isPending = req.status === "Pending";
   const busy = actionBusy === req.id;
+
+  const [history, setHistory] = useState<IApprovalHistory | null>(null);
+
+  useEffect(() => {
+    apiHandler.requisitions.getApprovalHistory(req.id)
+      .then(res => { if (res?.isSuccess) setHistory(res.content); })
+      .catch(() => {});
+  }, [req.id]);
+
+  const stepperSteps = history?.workflowSteps.map(step => ({
+    name: step.stepName,
+    status: deriveStepStatus(step, history),
+  })) ?? [];
+  const rejectionNote = history?.records.find(r => r.status === 'Rejected')?.notes;
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
@@ -60,11 +88,40 @@ export default function RequisitionCard({ req, onApprove, onReject, actionBusy }
         <p className="text-sm text-green-600">{req.description || "No description provided."}</p>
       </div>
 
-      {/* Rejection Reason */}
-      {req.status === 3 && req.reason && (
+      {/* File Link */}
+      {req.fileUrl && (
+        <div className="px-6 pb-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Requisition File:</p>
+          <a href={req.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600 hover:underline flex items-center gap-1">
+            <FileText className="w-3 h-3" />{req.fileOriginalName ?? "Download"}
+          </a>
+        </div>
+      )}
+
+      {/* Approval Workflow Stepper */}
+      {stepperSteps.length > 0 && (
+        <div className="px-6 pb-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Approval Workflow:</p>
+          <ApprovalWorkflowStepper steps={stepperSteps} />
+        </div>
+      )}
+
+      {/* Rejection Reason (from workflow history) */}
+      <RejectionReasonBanner reason={rejectionNote} />
+
+      {/* Rejection Reason (legacy inline field) */}
+      {req.status === 3 && req.reason && !rejectionNote && (
         <div className="mx-6 mb-4 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
           <p className="text-xs font-semibold text-red-600 mb-0.5">Rejection Reason:</p>
           <p className="text-sm text-red-500">{req.reason}</p>
+        </div>
+      )}
+
+      {/* Approval History Timeline */}
+      {history && history.records.length > 0 && (
+        <div className="px-6 pb-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Approval History:</p>
+          <ApprovalHistoryTimeline records={history.records} />
         </div>
       )}
 
