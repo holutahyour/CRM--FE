@@ -14,6 +14,8 @@ interface ItemRequestCardProps {
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   actionBusy: string | null;
+  /** Increment to force a re-fetch of approval history (e.g. after approve/reject) */
+  refreshKey?: number;
 }
 
 function deriveStepStatus(step: IWorkflowStep, history: IApprovalHistory): WorkflowStepStatus {
@@ -24,7 +26,7 @@ function deriveStepStatus(step: IWorkflowStep, history: IApprovalHistory): Workf
   return 'pending';
 }
 
-export default function ItemRequestCard({ req, onApprove, onReject, actionBusy }: ItemRequestCardProps) {
+export default function ItemRequestCard({ req, onApprove, onReject, actionBusy, refreshKey = 0 }: ItemRequestCardProps) {
   const statusKey = req.status === 1 ? "Pending" : req.status === 2 ? "Approved" : req.status === 3 ? "Rejected" : req.status;
   const badge = STATUS_BADGE[statusKey as string] ?? STATUS_BADGE.Pending;
   const dept = req.department?.name || req.departmentName || "—";
@@ -42,7 +44,7 @@ export default function ItemRequestCard({ req, onApprove, onReject, actionBusy }
     apiHandler.itemRequests.getApprovalHistory(req.id)
       .then(res => { if (res?.isSuccess) setHistory(res.content); })
       .catch(() => {});
-  }, [req.id]);
+  }, [req.id, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stepperSteps = history?.workflowSteps.map(step => ({
     name: step.stepName,

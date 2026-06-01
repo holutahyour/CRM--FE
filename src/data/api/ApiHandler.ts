@@ -170,6 +170,8 @@ const menus = {
 
 const roles = {
   list: () => requests.get<any>(`/roles`),
+  /** Lightweight: only id + name, accessible to all authenticated users. Used for dropdowns. */
+  listNames: () => requests.get<{ isSuccess: boolean; content: { id: string; name: string }[] }>(`/roles/names`),
 };
 
 const notification = {

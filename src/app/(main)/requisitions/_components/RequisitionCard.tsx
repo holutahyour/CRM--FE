@@ -14,6 +14,8 @@ interface RequisitionCardProps {
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   actionBusy: string | null;
+  /** Increment to force a re-fetch of approval history (e.g. after approve/reject) */
+  refreshKey?: number;
 }
 
 function deriveStepStatus(step: IWorkflowStep, history: IApprovalHistory): WorkflowStepStatus {
@@ -24,7 +26,7 @@ function deriveStepStatus(step: IWorkflowStep, history: IApprovalHistory): Workf
   return 'pending';
 }
 
-export default function RequisitionCard({ req, onApprove, onReject, actionBusy }: RequisitionCardProps) {
+export default function RequisitionCard({ req, onApprove, onReject, actionBusy, refreshKey = 0 }: RequisitionCardProps) {
   const badge = STATUS_BADGE[req.status] ?? STATUS_BADGE.Pending;
   const dept = req.department?.name || req.departmentName || "—";
   const date = fmtDate(req.date || req.createdAt);
@@ -37,7 +39,7 @@ export default function RequisitionCard({ req, onApprove, onReject, actionBusy }
     apiHandler.requisitions.getApprovalHistory(req.id)
       .then(res => { if (res?.isSuccess) setHistory(res.content); })
       .catch(() => {});
-  }, [req.id]);
+  }, [req.id, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stepperSteps = history?.workflowSteps.map(step => ({
     name: step.stepName,

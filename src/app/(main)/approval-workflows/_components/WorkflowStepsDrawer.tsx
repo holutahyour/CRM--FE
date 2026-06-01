@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Grip, Plus, Trash2 } from "lucide-react";
@@ -117,13 +117,22 @@ function DraggableStep({
 
 interface WorkflowStepsDrawerProps {
   templateId: string;
+  /** Workflow type (1 = Requisitions, 2 = Item Requests). Required when templateId is not a real GUID
+   *  so the drawer can create the template before upserting steps. */
+  workflowType: number;
   initialSteps: IWorkflowStepRequest[];
   roles: Role[];
   onSaved: () => void;
 }
 
+/** Returns true if the string is a valid UUID / GUID */
+function isGuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
 function WorkflowStepsDrawerInner({
   templateId,
+  workflowType,
   initialSteps,
   roles,
   onSaved,
@@ -139,13 +148,25 @@ function WorkflowStepsDrawerInner({
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Reset local steps whenever the drawer opens with fresh initialSteps
+  // Reset local steps when the drawer opens OR when initialSteps change while the
+  // drawer is already open (handles URL-based navigation where templates load after
+  // the drawer's key is set from the URL param).
+  // Uses JSON deep-compare to avoid resetting on reference-only re-renders.
   const prevOpenRef = useRef(false);
-  if (open && !prevOpenRef.current) {
-    setSteps(initialSteps);
-    setError(null);
-  }
-  prevOpenRef.current = open;
+  const prevInitialStepsRef = useRef(initialSteps);
+  useEffect(() => {
+    const openTransition = open && !prevOpenRef.current;
+    const stepsChanged =
+      JSON.stringify(initialSteps) !== JSON.stringify(prevInitialStepsRef.current);
+
+    if (openTransition || (open && stepsChanged)) {
+      setSteps(initialSteps);
+      if (openTransition) setError(null);
+    }
+
+    prevOpenRef.current = open;
+    prevInitialStepsRef.current = initialSteps;
+  }, [open, initialSteps]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMove = useCallback((dragIndex: number, hoverIndex: number) => {
     setSteps((prev) => {
@@ -202,11 +223,32 @@ function WorkflowStepsDrawerInner({
 
     setIsSaving(true);
     try {
-      const payload = steps.map((s, i) => ({
-        ...s,
-        stepOrder: i + 1,
-      }));
-      await apiHandler.workflowTemplates.upsertSteps(templateId, payload);
+      const payload = steps.map((s, i) => ({ ...s, stepOrder: i + 1 }));
+
+      // If this workflow template doesn't exist in the DB yet (templateId is a placeholder,
+      // not a real GUID), create it first so we have a valid ID for the steps upsert.
+      let resolvedId = templateId;
+      if (!isGuid(templateId)) {
+        const WORKFLOW_NAMES: Record<number, string> = {
+          1: "Requisitions Workflow",
+          2: "Item Requests Workflow",
+        };
+        const createRes = await apiHandler.workflowTemplates.create({
+          workflowType,
+          name: WORKFLOW_NAMES[workflowType] ?? `Workflow Type ${workflowType}`,
+          isActive: true,
+          steps: [],
+        });
+        // createRes is IApiResponse<IWorkflowTemplate>; extract content on success
+        const createdTemplate = createRes?.isSuccess ? createRes.content : null;
+        if (!createdTemplate?.id) {
+          setError("Failed to initialise workflow template. Please try again.");
+          return;
+        }
+        resolvedId = createdTemplate.id;
+      }
+
+      await apiHandler.workflowTemplates.upsertSteps(resolvedId, payload);
       onSaved();
       router.push(pathName.split("?")[0]);
     } catch (e) {
@@ -276,3 +318,4 @@ export default function WorkflowStepsDrawer(props: WorkflowStepsDrawerProps) {
     </DndProvider>
   );
 }
+

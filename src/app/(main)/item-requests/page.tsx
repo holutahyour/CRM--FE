@@ -39,6 +39,8 @@ export default function ItemRequestsPage() {
   const [actionBusy, setActionBusy] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<string | null>(null);
   const [rejectBusy, setRejectBusy] = useState(false);
+  // Incremented after every approve/reject to make cards re-fetch their approval history
+  const [approvalVersion, setApprovalVersion] = useState(0);
 
   const [totalRecords, setTotalRecords] = useState(0);
   const [pagination, setPagination] = useState({
@@ -120,10 +122,19 @@ export default function ItemRequestsPage() {
   const handleApprove = async (id: string) => {
     setActionBusy(id);
     try {
-      await apiHandler.itemRequests.approve(id);
-      setRequests((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status: 2 } : r))
-      );
+      const res = await apiHandler.itemRequests.approve(id);
+      // Use the server's actual updated status instead of assuming "Approved"
+      // (multi-step workflows stay Pending until the last step is approved)
+      if (res?.isSuccess && res.content) {
+        setRequests((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, ...res.content } : r))
+        );
+      } else {
+        // Fallback: reload all data from the server
+        setLoading(true);
+        fetchData();
+      }
+      setApprovalVersion((v) => v + 1);
     } catch (e) {
       console.error("Approve failed", e);
     } finally {
@@ -135,10 +146,16 @@ export default function ItemRequestsPage() {
     if (!rejectTarget) return;
     setRejectBusy(true);
     try {
-      await apiHandler.itemRequests.reject(rejectTarget, reason);
-      setRequests((prev) =>
-        prev.map((r) => (r.id === rejectTarget ? { ...r, status: 3, reason } : r))
-      );
+      const res = await apiHandler.itemRequests.reject(rejectTarget, reason);
+      if (res?.isSuccess && res.content) {
+        setRequests((prev) =>
+          prev.map((r) => (r.id === rejectTarget ? { ...r, ...res.content } : r))
+        );
+      } else {
+        setLoading(true);
+        fetchData();
+      }
+      setApprovalVersion((v) => v + 1);
       setRejectTarget(null);
     } catch (e) {
       console.error("Reject failed", e);
@@ -241,6 +258,7 @@ export default function ItemRequestsPage() {
                 onApprove={handleApprove}
                 onReject={(id) => setRejectTarget(id)}
                 actionBusy={actionBusy}
+                refreshKey={approvalVersion}
               />
             ))}
 

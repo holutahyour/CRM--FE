@@ -141,9 +141,15 @@ export default function ApprovalWorkflowsPage() {
   const [activeTemplate, setActiveTemplate] = useState<IWorkflowTemplate | null>(null);
   const [activeType, setActiveType] = useState<number>(1);
 
-  // Build edit URLs for each workflow type (value = template ID or a placeholder)
-  const reqTemplate = templates.find((t) => t.workflowType === 1);
-  const irTemplate = templates.find((t) => t.workflowType === 2);
+  // Build edit URLs for each workflow type (value = template ID or a placeholder).
+  // The backend uses JsonStringEnumConverter, so WorkflowType is serialised as a string
+  // ("Requisition", "ItemRequest") rather than an integer. Guard against both formats.
+  const reqTemplate = templates.find(
+    (t) => t.workflowType === 1 || (t.workflowType as unknown as string) === "Requisition"
+  );
+  const irTemplate = templates.find(
+    (t) => t.workflowType === 2 || (t.workflowType as unknown as string) === "ItemRequest"
+  );
 
   const reqDrawerUrl = useModifyQuery(
     null,
@@ -166,24 +172,34 @@ export default function ApprovalWorkflowsPage() {
         return;
       }
 
-      const [templatesRes, rolesRes] = await Promise.all([
+      // Use Promise.allSettled so a failed roles call never prevents templates from loading.
+      // Roles use the lightweight /roles/names endpoint (accessible to any authenticated user).
+      const [templatesResult, rolesResult] = await Promise.allSettled([
         apiHandler.workflowTemplates.list(),
-        apiHandler.roles.list(),
+        apiHandler.roles.listNames(),
       ]);
 
-      if (templatesRes?.isSuccess && Array.isArray(templatesRes.content)) {
-        setTemplates(templatesRes.content);
-      } else if (Array.isArray(templatesRes)) {
-        setTemplates(templatesRes as IWorkflowTemplate[]);
+      if (templatesResult.status === "fulfilled") {
+        const templatesRes = templatesResult.value;
+        if (templatesRes?.isSuccess && Array.isArray(templatesRes.content)) {
+          setTemplates(templatesRes.content);
+        } else if (Array.isArray(templatesRes)) {
+          setTemplates(templatesRes as IWorkflowTemplate[]);
+        }
+      } else {
+        console.error("Failed to fetch workflow templates", templatesResult.reason);
       }
 
-      const rArr =
-        rolesRes?.isSuccess && Array.isArray(rolesRes.content)
-          ? rolesRes.content
-          : Array.isArray(rolesRes)
-          ? rolesRes
-          : [];
-      setRoles(rArr);
+      if (rolesResult.status === "fulfilled") {
+        const rolesRes = rolesResult.value;
+        const rArr =
+          rolesRes?.isSuccess && Array.isArray(rolesRes.content)
+            ? rolesRes.content
+            : [];
+        setRoles(rArr);
+      } else {
+        console.error("Failed to fetch roles for workflow", rolesResult.reason);
+      }
     } catch (e) {
       console.error("Failed to fetch approval workflows data", e);
     } finally {
@@ -201,13 +217,23 @@ export default function ApprovalWorkflowsPage() {
     fetchData();
   }, [fetchData]);
 
-  // Determine the drawer's templateId and initial steps based on activeTemplate
+  // URL-based drawer support: if the page is loaded with ?workflow_drawer=<id>,
+  // use that as the drawer key so sharing/refreshing opens the correct drawer.
+  const urlDrawerId = searchParams.get(APP_WORKFLOW_DRAWER) ?? undefined;
+
+  // Determine the drawer's templateId and initial steps.
+  // Priority: user clicked a card → URL param → default by workflowType.
   const drawerTemplateId =
     activeTemplate?.id ??
+    urlDrawerId ??
     (activeType === 1 ? reqTemplate?.id ?? "new-req" : irTemplate?.id ?? "new-ir");
 
+  // Use the matched template (either from click or URL) to populate initial steps.
+  const effectiveTemplate =
+    activeTemplate ?? templates.find((t) => t.id === drawerTemplateId);
+
   const drawerInitialSteps: IWorkflowStepRequest[] = (
-    activeTemplate?.steps ?? []
+    effectiveTemplate?.steps ?? []
   )
     .slice()
     .sort((a, b) => a.stepOrder - b.stepOrder)
@@ -224,6 +250,7 @@ export default function ApprovalWorkflowsPage() {
       <WorkflowStepsDrawer
         key={drawerTemplateId}
         templateId={drawerTemplateId}
+        workflowType={activeType}
         initialSteps={drawerInitialSteps}
         roles={roles}
         onSaved={handleSaved}
