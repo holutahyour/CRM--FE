@@ -23,16 +23,6 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const ROLES = [
-  "Administrator",
-  "Finance",
-  "Inventory Officer",
-  "ICT Administrator",
-  "Department User",
-  "HR Manager",
-  "Auditor",
-];
-
 interface AddUserDrawerProps {
   onCreated: (user: CrmUser) => void;
 }
@@ -50,6 +40,7 @@ export default function AddUserDrawer({ onCreated }: AddUserDrawerProps) {
   };
 
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [roles, setRoles] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -59,6 +50,15 @@ export default function AddUserDrawer({ onCreated }: AddUserDrawerProps) {
             ? res.content
             : Array.isArray(res) ? res : [];
         setDepartments(arr);
+      }).catch(() => {});
+
+      // Roles are sourced from the API (the 6 seeded access tiers) rather than a hardcoded list.
+      apiHandler.roles.listNames().then((res: any) => {
+        const arr =
+          res?.isSuccess && Array.isArray(res.content)
+            ? res.content
+            : Array.isArray(res) ? res : [];
+        setRoles(arr);
       }).catch(() => {});
     }
   }, [open]);
@@ -169,8 +169,8 @@ export default function AddUserDrawer({ onCreated }: AddUserDrawerProps) {
             className={`${inputBase} bg-white ${errors.role ? inputErr : inputOk}`}
           >
             <option value="">Select a role...</option>
-            {ROLES.map(r => (
-              <option key={r} value={r}>{r}</option>
+            {roles.map(r => (
+              <option key={r.id} value={r.name}>{r.name}</option>
             ))}
           </select>
           {errors.role && <p className="text-xs text-red-500 mt-1">{errors.role.message}</p>}

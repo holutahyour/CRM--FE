@@ -256,6 +256,8 @@ const categories = {
     const code = data.name.toUpperCase().replace(/[^A-Z0-9]/g, '-').slice(0, 10);
     return requests.post<any>(`/categories`, { ...data, code });
   },
+  // Bulk import — posts an array of CreateCategoryRequest to the backend /import endpoint.
+  import: (rows: any[]) => requests.post<any>(`/categories/import`, rows),
 };
 
 const vendors = {
@@ -267,6 +269,8 @@ const vendors = {
 const locations = {
   list: () => requests.get<any>(`/locations`),
   create: (data: { name: string; description?: string }) => requests.post<any>(`/locations`, data),
+  // Bulk import — posts an array of CreateLocationRequest to the backend /import endpoint.
+  import: (rows: any[]) => requests.post<any>(`/locations/import`, rows),
 };
 
 const items = {
@@ -290,6 +294,8 @@ const items = {
     itemLocation?: string;
   }) => requests.post<any>("/items", data),
   update: (id: string, data: any) => requests.put<any>(`/items?id=${id}`, data),
+  // Bulk import — posts an array of CreateItemRequest to the backend /import endpoint.
+  import: (rows: any[]) => requests.post<any>("/items/import", rows),
 };
 
 const itemRequests = {

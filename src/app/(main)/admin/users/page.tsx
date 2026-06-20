@@ -18,6 +18,8 @@ import {
   MOCK_UNAUTHORIZED_LOGS,
 } from "./_components/types";
 import UpdateUserDrawer from "./_components/UpdateUserDrawer";
+import ImportUsersDrawer, { APP_IMPORT_USERS_DRAWER } from "./_components/ImportUsersDrawer";
+import { Upload } from "lucide-react";
 import { HStack } from "@chakra-ui/react";
 import {
   PaginationItems,
@@ -163,6 +165,7 @@ export default function UserManagementPage() {
           setUsers(prev => prev.map(u => u.id === user.id ? user : u));
         }}
       />
+      <ImportUsersDrawer />
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -170,6 +173,17 @@ export default function UserManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
           <p className="text-sm text-gray-500">Manage user access and track activity</p>
         </div>
+        <button
+          onClick={() => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set(APP_IMPORT_USERS_DRAWER, "true");
+            router.push(`${pathName}?${params.toString()}`);
+          }}
+          className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+        >
+          <Upload className="w-4 h-4" />
+          Import Users
+        </button>
       </div>
 
       {/* Summary Cards */}

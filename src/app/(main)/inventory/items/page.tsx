@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Loader, Archive, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, Loader, Archive, ChevronLeft, ChevronRight, Upload } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import apiHandler from "@/data/api/ApiHandler";
 import { useModifyQuery } from "@/hooks/use-modify-query";
@@ -10,6 +10,7 @@ import LowStockAlerts from "./_components/LowStockAlerts";
 import InventoryTable from "./_components/InventoryTable";
 import AddItemDrawer from "./_components/AddItemDrawer";
 import UpdateItemDrawer from "./_components/UpdateItemDrawer";
+import ImportItemsDrawer, { APP_IMPORT_ITEMS_DRAWER } from "./_components/ImportItemsDrawer";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_DISABLE_MOCK_DATA !== "true";
 const APP_INVENTORY_DRAWER = "inv_drawer";
@@ -33,6 +34,14 @@ export default function InventoryPage() {
     null,
     searchParams,
     [{ key: APP_INVENTORY_DRAWER, value: "true" }],
+    "set"
+  );
+
+  // URL that opens the import drawer
+  const importUrl = useModifyQuery(
+    null,
+    searchParams,
+    [{ key: APP_IMPORT_ITEMS_DRAWER, value: "true" }],
     "set"
   );
 
@@ -104,6 +113,7 @@ export default function InventoryPage() {
           fetchData();
         }}
       />
+      <ImportItemsDrawer onImported={() => fetchData()} />
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -116,13 +126,22 @@ export default function InventoryPage() {
             <p className="text-sm text-gray-500 font-medium">Track and manage inventory stock levels</p>
           </div>
         </div>
-        <button
-          onClick={() => router.push(drawerUrl)}
-          className="flex items-center gap-2 bg-[#7cc843] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#68a638] transition-all shadow-sm active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          Add Item
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push(importUrl)}
+            className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+          >
+            <Upload className="w-4 h-4" />
+            Import
+          </button>
+          <button
+            onClick={() => router.push(drawerUrl)}
+            className="flex items-center gap-2 bg-[#7cc843] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#68a638] transition-all shadow-sm active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            Add Item
+          </button>
+        </div>
       </div>
 
       {/* Alerts Section */}
