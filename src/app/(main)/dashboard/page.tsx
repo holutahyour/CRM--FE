@@ -6,19 +6,18 @@ import { RecentActivityList } from "@/components/dashboard/RecentActivityList";
 import { LowStockList } from "@/components/dashboard/LowStockList";
 import { Clock, CheckCircle, Package, TrendingUp, AlertTriangle, FileText, Laptop, Printer } from "lucide-react";
 import apiHandler from "@/data/api/ApiHandler";
+import { useAzureAuth } from "@/context/auth-context";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_DISABLE_MOCK_DATA !== "true";
 
 export default function DashboardPage() {
+  const { user } = useAzureAuth();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    pending: 12,
-    approved: 45,
-    itemRequests: 8,
-    monthlyGoals: 85,
-    lowStock: 5,
-    openIncidents: 3
-  });
+  const [stats, setStats] = useState(
+    USE_MOCK
+      ? { pending: 12, approved: 45, itemRequests: 8, monthlyGoals: 85, lowStock: 5, openIncidents: 3 }
+      : { pending: 0, approved: 0, itemRequests: 0, monthlyGoals: 0, lowStock: 0, openIncidents: 0 }
+  );
 
   const [recentActivity, setRecentActivity] = useState<any[]>(USE_MOCK ? [
     {
@@ -111,13 +110,13 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
-  const userName = "John Admin"; // In a real scenario, this would come from a user context or session
+  const userName = user?.name || (USE_MOCK ? "John Admin" : "");
 
   return (
     <div className="flex-1 space-y-6 p-1">
       <div className="flex flex-col space-y-2">
         <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Dashboard</h2>
-        <p className="text-sm text-muted-foreground text-gray-500 dark:text-gray-400">Welcome back, {userName}</p>
+        <p className="text-sm text-muted-foreground text-gray-500 dark:text-gray-400">{userName ? `Welcome back, ${userName}` : "Welcome back"}</p>
       </div>
 
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">

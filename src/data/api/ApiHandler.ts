@@ -119,7 +119,8 @@ const users = {
     if (params?.page) query.append("page", params.page.toString());
     if (params?.pageSize) query.append("pageSize", params.pageSize.toString());
     if (params?.search) query.append("search", params.search);
-    if (params?.isOnboarded !== undefined) query.append("isOnboarded", params.isOnboarded.toString());
+    // Backend filters via the generic `filter=Property=Value` param (no dedicated isOnboarded arg).
+    if (params?.isOnboarded !== undefined) query.append("filter", `Onboarded=${params.isOnboarded}`);
     return requests.get<IApiResponse<IUser>>(`/users?${query.toString()}`);
   },
   get_by_id: (id: string) => requests.get<IApiResponse<IUser>>(`/users/${id}`),

@@ -37,6 +37,24 @@ import {
 
 const USE_MOCK = process.env.NEXT_PUBLIC_DISABLE_MOCK_DATA !== "true";
 
+// The API returns raw UserDTOs (firstName/lastName/onboarded/roles[]); the table reads
+// name/isOnboarded/role. Normalize here so users — including newly provisioned, role-less
+// ones awaiting onboarding — render correctly instead of showing blank cells.
+const mapApiUser = (u: any): CrmUser => ({
+  id:             u.id,
+  name:           u.name ?? u.fullName ??
+                  ([u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.email),
+  email:          u.email,
+  departmentName: u.departmentName ?? u.department?.name,
+  department:     u.department,
+  role:           u.role ?? u.roleName ?? (Array.isArray(u.roles) ? u.roles[0] : undefined),
+  roleName:       Array.isArray(u.roles) ? u.roles.join(", ") : u.roleName,
+  accessLevel:    u.accessLevel,
+  isOnboarded:    u.isOnboarded ?? u.onboarded ?? false,
+  isActive:       u.isActive,
+  createdAt:      u.createdAt,
+});
+
 export default function UserManagementPage() {
   const router       = useRouter();
   const searchParams = useSearchParams();
@@ -82,9 +100,9 @@ export default function UserManagementPage() {
       if (usersRes.status === "fulfilled") {
         const res = usersRes.value;
         if (Array.isArray(res)) {
-          setUsers(res); setTotalRecords(res.length);
+          setUsers(res.map(mapApiUser)); setTotalRecords(res.length);
         } else if ((res as any)?.isSuccess && Array.isArray((res as any).content)) {
-          setUsers((res as any).content);
+          setUsers((res as any).content.map(mapApiUser));
           setTotalRecords((res as any).metaData?.total ?? (res as any).content.length);
         } else {
           setUsers([]); setTotalRecords(0);
