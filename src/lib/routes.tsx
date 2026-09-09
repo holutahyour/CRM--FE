@@ -15,6 +15,7 @@ export const PARAMETERS = `parameters`
 export const NOTIFICATIONS = `/notifications`;
 export const ADMIN = `/admin`;
 export const OPERATIONS = `/operations`;
+export const SALES = `/sales`;
 
 
 // export const BILLING_REPORT = "/reports/billing-report";
@@ -58,3 +59,12 @@ export const APP_BATCH_MODAL = 'batch_modal'
 export const APP_MACHINE_USAGE_MODAL = 'machine_usage_modal'
 export const APP_VEHICLE_TRACKING_MODAL = 'vehicle_tracking_modal'
 export const APP_VEHICLE_REFUELING_MODAL = 'vehicle_refueling_modal'
+
+// Sales page - tab selection
+export const SALES_TAB = 'tab'
+
+// Sales page - modals
+export const APP_PRODUCTION_MODAL = 'production_modal'
+export const APP_SALE_MODAL = 'sale_modal'
+export const APP_FEED_COST_MODAL = 'feed_cost_modal'
+export const APP_STOCK_MODAL = 'stock_modal'

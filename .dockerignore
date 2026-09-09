@@ -1,0 +1,13 @@
+node_modules
+.next
+.swc
+.git
+.vscode
+test-results
+playwright-report
+e2e
+docs
+tsconfig.tsbuildinfo
+Dockerfile
+docker-compose.yml
+.env.local

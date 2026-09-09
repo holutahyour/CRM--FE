@@ -1,37 +1,30 @@
-# Stage 1: Build the Next.js app
-FROM node:18-alpine AS builder
-
-# Set the working directory
+# Stage 1: build the Next.js app
+FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json ./
+# NEXT_PUBLIC_* values are inlined into the client bundle at build time,
+# so they must be present here, not only at runtime.
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_DISABLE_MOCK_DATA=true
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_DISABLE_MOCK_DATA=$NEXT_PUBLIC_DISABLE_MOCK_DATA
 
-# Install dependencies
+COPY package.json ./
 RUN npm install
 
-# Copy the rest of the app
 COPY . .
-
-# Build the Next.js app
 RUN npm run build
 
-# Stage 2: Serve the app with a lightweight web server
-FROM node:18-alpine
-
-# Set the working directory
+# Stage 2: runtime
+FROM node:20-alpine
 WORKDIR /app
+ENV NODE_ENV=production
 
-# Copy only the necessary files from the builder stage
-COPY --from=builder /app/package.json /app/package-lock.json ./
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.mjs ./
 
-# Install production dependencies
-RUN npm install --production
-
-# Expose the default Next.js port
 EXPOSE 3000
-
-# Start the app
 CMD ["npm", "start"]

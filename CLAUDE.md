@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-pnpm dev          # Start dev server (proxies to http://localhost:5000)  ← use pnpm, not npm
+pnpm dev          # Start dev server on http://localhost:3000; backend via NEXT_PUBLIC_API_URL  ← use pnpm, not npm
 pnpm build        # Production build
 pnpm lint         # ESLint via next lint
 pnpm test         # Run Jest unit tests (10 test suites as of approval workflow feature)
@@ -179,7 +179,7 @@ expect(badge).toHaveClass('bg-green-600');
 
 `src/data/api/ApiHandler.ts` exports a single `apiHandler` object. Full namespace list as of the approval workflow feature:
 
-`users`, `roles`, `menus`, `erpSettings`, `notification`, `dashboard`, `requisitions`, `itemRequests`, `incidents`, `monthlyReports`, `items`, `departments`, `categories`, `vendors`, `locations`, **`workflowTemplates`**, **`operations`**
+`users`, `roles`, `menus`, `erpSettings`, `notification`, `dashboard`, `requisitions`, `itemRequests`, `incidents`, `monthlyReports`, `items`, `departments`, `categories`, `vendors`, `locations`, **`workflowTemplates`**, **`operations`**, **`sales`**
 
 ### Key Methods Added for Approval Workflow
 

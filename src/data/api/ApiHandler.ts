@@ -510,6 +510,28 @@ const operations = {
     requests.post<any>(`/operations/vehicle-refueling-logs`, data),
 };
 
+const sales = {
+  // Daily Production
+  listProduction: () => requests.get<any>(`/sales/daily-production`),
+  createProduction: (data: any) => requests.post<any>(`/sales/daily-production`, data),
+  deleteProduction: (id: string) => requests.delete<any>(`/sales/daily-production/${id}`),
+
+  // Sales
+  listSales: () => requests.get<any>(`/sales/records`),
+  createSale: (data: any) => requests.post<any>(`/sales/records`, data),
+  deleteSale: (id: string) => requests.delete<any>(`/sales/records/${id}`),
+
+  // Feed Cost
+  listFeedCosts: () => requests.get<any>(`/sales/feed-costs`),
+  createFeedCost: (data: any) => requests.post<any>(`/sales/feed-costs`, data),
+  deleteFeedCost: (id: string) => requests.delete<any>(`/sales/feed-costs/${id}`),
+
+  // Stock
+  listStock: () => requests.get<any>(`/sales/stock`),
+  createStock: (data: any) => requests.post<any>(`/sales/stock`, data),
+  deleteStock: (id: string) => requests.delete<any>(`/sales/stock/${id}`),
+};
+
 const apiHandler = {
   users,
   roles,
@@ -531,6 +553,7 @@ const apiHandler = {
   locations,
   workflowTemplates,
   operations,
+  sales,
   get: requests.get,
   put: requests.put,
 };
