@@ -494,9 +494,37 @@ const operations = {
   updateAllocationUnit: (id: string, data: { total: number; allocated: number }) =>
     requests.put<any>(`/operations/facility/units/${id}`, data),
 
-  // Processing
-  listBatches: () => requests.get<any>(`/operations/batches`),
+  // Processing (Batch Production Scheduling workbook). Record logs are read whole —
+  // the base list endpoint pages at 100 by default.
+  listProducts: () => requests.get<any>(`/operations/products?pageSize=1000`),
+  createProduct: (data: any) => requests.post<any>(`/operations/products`, data),
+  updateProduct: (id: string, data: any) => requests.put<any>(`/operations/products/${id}`, data),
+  deleteProduct: (id: string) => requests.delete<any>(`/operations/products/${id}`),
+
+  listOrderRequests: () => requests.get<any>(`/operations/order-requests?pageSize=1000`),
+  createOrderRequest: (data: any) => requests.post<any>(`/operations/order-requests`, data),
+  updateOrderRequest: (id: string, data: any) =>
+    requests.put<any>(`/operations/order-requests/${id}`, data),
+  deleteOrderRequest: (id: string) => requests.delete<any>(`/operations/order-requests/${id}`),
+
+  listBatches: () => requests.get<any>(`/operations/batches?pageSize=1000`),
   createBatch: (data: any) => requests.post<any>(`/operations/batches`, data),
+  updateBatch: (id: string, data: any) => requests.put<any>(`/operations/batches/${id}`, data),
+  deleteBatch: (id: string) => requests.delete<any>(`/operations/batches/${id}`),
+
+  listYieldEntries: () => requests.get<any>(`/operations/yield-entries?pageSize=1000`),
+  createYieldEntry: (data: any) => requests.post<any>(`/operations/yield-entries`, data),
+  updateYieldEntry: (id: string, data: any) =>
+    requests.put<any>(`/operations/yield-entries/${id}`, data),
+  deleteYieldEntry: (id: string) => requests.delete<any>(`/operations/yield-entries/${id}`),
+
+  listStockCards: () => requests.get<any>(`/operations/stock-cards`),
+  getStockCard: (itemId: string) => requests.get<any>(`/operations/stock-cards/${itemId}`),
+  receiveStock: (itemId: string, data: { date: string; quantity: number; whereRequired?: string }) =>
+    requests.post<any>(`/operations/stock-cards/${itemId}/receive`, data),
+  issueStock: (itemId: string, data: { date: string; quantity: number; whereRequired?: string }) =>
+    requests.post<any>(`/operations/stock-cards/${itemId}/issue`, data),
+
   listMachineUsageLogs: () => requests.get<any>(`/operations/machine-usage-logs`),
   createMachineUsageLog: (data: any) =>
     requests.post<any>(`/operations/machine-usage-logs`, data),

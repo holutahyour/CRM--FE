@@ -45,20 +45,7 @@ export const unallocated = (u: AllocationUnit) => Math.max(0, u.total - u.alloca
 
 // ── Processing ────────────────────────────────────────────────────────────────
 
-export type BatchStatus = "scheduled" | "in_progress" | "completed" | "cancelled";
-
-export interface ProductionBatch {
-  id: string;
-  date: string;
-  batchId: string;
-  product: string;
-  quantityKg: number;
-  scheduledStart?: string;
-  scheduledEnd?: string;
-  operator?: string;
-  status: BatchStatus | string;
-  notes?: string;
-}
+// Batch scheduling, order requests, yield and stock cards live in ./processing/types.ts.
 
 export type MachineUsageStatus = "operational" | "maintenance" | "breakdown";
 
@@ -112,13 +99,6 @@ export const totalFuelCost = (l: Pick<VehicleRefuelingLog, "quantityLitres" | "u
 
 // ── Badges & option lists ─────────────────────────────────────────────────────
 
-export const BATCH_STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  scheduled:   { label: "Scheduled",   className: "bg-gray-100 text-gray-600 border border-gray-300" },
-  in_progress: { label: "In Progress", className: "bg-yellow-100 text-yellow-800 border border-yellow-300" },
-  completed:   { label: "Completed",   className: "bg-green-100 text-green-700 border border-green-300" },
-  cancelled:   { label: "Cancelled",   className: "bg-red-100 text-red-700 border border-red-300" },
-};
-
 export const MACHINE_STATUS_BADGE: Record<string, { label: string; className: string }> = {
   operational: { label: "Operational", className: "bg-green-100 text-green-700 border border-green-300" },
   maintenance: { label: "Maintenance", className: "bg-yellow-100 text-yellow-800 border border-yellow-300" },
@@ -130,13 +110,6 @@ export const TRIP_STATUS_BADGE: Record<string, { label: string; className: strin
   completed:  { label: "Completed",  className: "bg-green-100 text-green-700 border border-green-300" },
   cancelled:  { label: "Cancelled",  className: "bg-red-100 text-red-700 border border-red-300" },
 };
-
-export const BATCH_STATUS_OPTIONS: { value: BatchStatus; label: string }[] = [
-  { value: "scheduled",   label: "Scheduled" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "completed",   label: "Completed" },
-  { value: "cancelled",   label: "Cancelled" },
-];
 
 export const MACHINE_STATUS_OPTIONS: { value: MachineUsageStatus; label: string }[] = [
   { value: "operational", label: "Operational" },
@@ -204,7 +177,6 @@ export const MOCK_FACILITY: FacilityOverview = {
   ],
 };
 
-export const MOCK_BATCHES: ProductionBatch[] = [];
 export const MOCK_MACHINE_USAGE_LOGS: MachineUsageLog[] = [];
 export const MOCK_VEHICLE_TRACKING_LOGS: VehicleTrackingLog[] = [];
 export const MOCK_VEHICLE_REFUELING_LOGS: VehicleRefuelingLog[] = [];

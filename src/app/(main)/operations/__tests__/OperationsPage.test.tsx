@@ -77,6 +77,22 @@ describe('OperationsPage', () => {
     expect(push).toHaveBeenCalledWith('/operations?tab=logistics', { scroll: false });
   });
 
+  it('offers a Processing sub-tab for every part of the batch production workbook', () => {
+    renderAt('tab=processing');
+
+    expect(
+      screen.getAllByRole('tab').slice(3).map((t) => t.textContent)
+    ).toEqual([
+      'Batch Scheduling',
+      'Order Requests',
+      'Yield Log',
+      'Material Stock',
+      'Products',
+      'Machine Usage Logs',
+    ]);
+    expect(screen.getByRole('tab', { name: 'Batch Scheduling' })).toHaveAttribute('aria-selected', 'true');
+  });
+
   it('shows the empty batch scheduling table on the Processing tab', () => {
     renderAt('tab=processing');
 
@@ -84,8 +100,28 @@ describe('OperationsPage', () => {
     expect(screen.getByText('No batches scheduled yet.')).toBeInTheDocument();
 
     const header = screen.getByRole('table');
-    expect(within(header).getByText('Qty (kg)')).toBeInTheDocument();
-    expect(within(header).getByText('Sched. Start')).toBeInTheDocument();
+    expect(within(header).getByText('Batch ID')).toBeInTheDocument();
+    expect(within(header).getByText('Work Center(s)')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['order-requests', 'Order Requests', 'No order requests yet.'],
+    ['yield-log', 'Yield Log', 'No yield entries yet.'],
+    ['products', 'Products', 'No products yet.'],
+    ['machine-usage-logs', 'Machine Usage Logs', 'No machine usage logs yet.'],
+  ])('shows the empty %s section', (sub, heading, empty) => {
+    renderAt(`tab=processing&sub=${sub}`);
+
+    expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument();
+    expect(screen.getByText(empty)).toBeInTheDocument();
+  });
+
+  it('shows the three stock-card categories on Material Stock', () => {
+    renderAt('tab=processing&sub=material-stock');
+
+    expect(screen.getByRole('heading', { name: 'Processing – Raw Produce' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Processing – Ingredients' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Processing – Packaging & Supplies' })).toBeInTheDocument();
   });
 
   it('shows the empty vehicle tracking table on the Logistics tab', () => {
@@ -105,11 +141,12 @@ describe('OperationsPage', () => {
     expect(within(dialog).getByRole('button', { name: 'Add Log' })).toBeInTheDocument();
   });
 
-  it('opens the Schedule New Batch modal from the URL', () => {
+  it('opens the Add Batch modal from the URL', () => {
     renderAt('tab=processing&batch_modal=true');
 
-    const dialog = screen.getByRole('dialog', { name: 'Schedule New Batch' });
-    expect(within(dialog).getByPlaceholderText('e.g. BATCH-001')).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Schedule Batch' })).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog', { name: 'Add Batch' });
+    expect(within(dialog).getByPlaceholderText('e.g. HI925001')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText(/^Status/)).toHaveValue('NotStarted');
+    expect(within(dialog).getByRole('button', { name: 'Save Batch' })).toBeInTheDocument();
   });
 });
