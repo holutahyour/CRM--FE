@@ -2,15 +2,18 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Dependencies first, and BEFORE any build ARG/ENV: a changed ARG invalidates
+# every later layer, so keeping this above it means a port/URL change only
+# re-runs `next build`, not a full dependency install.
+COPY package.json ./
+RUN npm install
+
 # NEXT_PUBLIC_* values are inlined into the client bundle at build time,
 # so they must be present here, not only at runtime.
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_DISABLE_MOCK_DATA=true
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_DISABLE_MOCK_DATA=$NEXT_PUBLIC_DISABLE_MOCK_DATA
-
-COPY package.json ./
-RUN npm install
 
 COPY . .
 RUN npm run build

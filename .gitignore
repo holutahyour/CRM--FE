@@ -39,3 +39,5 @@ next-env.d.ts
 #aider
 .cursorrules*
 .aider*
+# Playwright run output
+/test-results/
