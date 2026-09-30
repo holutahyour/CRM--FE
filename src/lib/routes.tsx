@@ -67,9 +67,14 @@ export const APP_VEHICLE_REFUELING_MODAL = 'vehicle_refueling_modal'
 
 // Sales page - tab selection
 export const SALES_TAB = 'tab'
+/** "produce" selects Fresh Produce; absent means EPL Poultry. */
+export const SALES_DIVISION = 'division'
 
 // Sales page - modals
 export const APP_PRODUCTION_MODAL = 'production_modal'
 export const APP_SALE_MODAL = 'sale_modal'
 export const APP_FEED_COST_MODAL = 'feed_cost_modal'
 export const APP_STOCK_MODAL = 'stock_modal'
+export const APP_PACKHOUSE_INTAKE_MODAL = 'packhouse_intake_modal'
+export const APP_PRODUCE_SALE_MODAL = 'produce_sale_modal'
+export const APP_PRODUCE_WEEK_MODAL = 'produce_week_modal'

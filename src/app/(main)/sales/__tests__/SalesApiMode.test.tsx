@@ -33,6 +33,12 @@ jest.mock('@/data/api/ApiHandler', () => ({
       createSale: jest.fn(),
       createFeedCost: jest.fn(),
       createStock: jest.fn(),
+      listProduceIntake: jest.fn(),
+      listProduceSales: jest.fn(),
+      listProduceWeekly: jest.fn(),
+      createProduceIntake: jest.fn(),
+      createProduceSale: jest.fn(),
+      createProduceWeekly: jest.fn(),
     },
   },
 }));
@@ -69,9 +75,10 @@ const submit = () =>
 beforeEach(() => {
   jest.clearAllMocks();
   jest.spyOn(console, 'error').mockImplementation(() => {});
-  [api.listProduction, api.listSales, api.listFeedCosts, api.listStock].forEach((f: jest.Mock) =>
-    f.mockImplementation(emptyList)
-  );
+  [
+    api.listProduction, api.listSales, api.listFeedCosts, api.listStock,
+    api.listProduceIntake, api.listProduceSales, api.listProduceWeekly,
+  ].forEach((f: jest.Mock) => f.mockImplementation(emptyList));
 });
 
 afterEach(() => {
@@ -175,5 +182,44 @@ describe('creating against the API', () => {
     );
     expect(screen.getByText('No production records yet.')).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
+  });
+});
+
+describe('Fresh Produce against the API', () => {
+  it('loads only the produce datasets', async () => {
+    renderAt('division=produce&tab=sales');
+    await waitFor(() => expect(screen.getByText('No produce sales yet.')).toBeInTheDocument());
+
+    expect(api.listProduceSales).toHaveBeenCalled();
+    expect(api.listSales).not.toHaveBeenCalled();
+  });
+
+  it('adds the produce sale the API returns and closes back to the produce tab', async () => {
+    api.createProduceSale.mockResolvedValue({
+      isSuccess: true,
+      content: {
+        id: 'srv-p1', date: '2026-06-05', customer: 'Server Market', category: 'Tomato',
+        quantity: 10, pricePerKg: 1000, paid: 10000, modeOfPayment: 'Cash',
+        paymentStatus: 'Fully Paid',
+      },
+    });
+    renderAt('division=produce&tab=sales&produce_sale_modal=true');
+    await waitFor(() => expect(screen.getByText('No produce sales yet.')).toBeInTheDocument());
+
+    await fill(/^Date/, '2026-06-05');
+    await fill(/^Customer/, 'Typed Market');
+    await userEvent.selectOptions(screen.getByLabelText(/^Product Category/), 'Tomato');
+    await fill('Qty Sold (kg)', '10');
+    await fill(/^Price\/kg/, '1000');
+    await fill(/^Paid/, '10000');
+    await userEvent.selectOptions(screen.getByLabelText(/^Remarks \(Payment Mode\)/), 'Cash');
+    await userEvent.selectOptions(screen.getByLabelText(/^Payment Status/), 'Fully Paid');
+    await submit();
+
+    await waitFor(() => expect(screen.getByText('Server Market')).toBeInTheDocument());
+    expect(api.createProduceSale).toHaveBeenCalledWith(
+      expect.objectContaining({ customer: 'Typed Market', quantity: 10, pricePerKg: 1000 })
+    );
+    expect(push).toHaveBeenCalledWith('/sales?division=produce&tab=sales', { scroll: false });
   });
 });

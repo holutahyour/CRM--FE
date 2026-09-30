@@ -103,6 +103,12 @@ export const SAVE_FAILED = "The record could not be saved. Please try again.";
 export const saveErrorMessage = (e: unknown) =>
   e instanceof Error && e.message.trim().length > 0 ? e.message : SAVE_FAILED;
 
+/** A form field's text as a number, with anything unparseable read as 0. */
+export const parseNum = (v: string) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
 // ── Formatters ────────────────────────────────────────────────────────────────
 
 export const fmtDate = (d?: string) => (d ? d.slice(0, 10) : "\u2014");
