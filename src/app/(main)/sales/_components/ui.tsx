@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Trash2 } from "lucide-react";
+import { Loader, Trash2 } from "lucide-react";
 
 // The Sales screens use the same visual language as Operations, so the shared
 // primitives (modal shell, table shell, fields, buttons) are re-exported from
@@ -24,18 +24,24 @@ export interface SalesTabDef {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-/** Full-width pill tab bar for the five Sales sections. */
+/** Full-width pill tab bar, used for both the division switch and each division's sections. */
 export function SalesTabs({
   tabs,
   active,
   onChange,
+  ariaLabel,
 }: {
   tabs: SalesTabDef[];
   active: string;
   onChange: (value: string) => void;
+  ariaLabel?: string;
 }) {
   return (
-    <div role="tablist" className="flex bg-gray-100 rounded-full p-1 overflow-x-auto">
+    <div
+      role="tablist"
+      aria-label={ariaLabel}
+      className="flex bg-gray-100 rounded-full p-1 overflow-x-auto"
+    >
       {tabs.map((t) => {
         const isActive = t.value === active;
         const Icon = t.icon;
@@ -55,6 +61,15 @@ export function SalesTabs({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** Placeholder shown while a division's records load. */
+export function TabLoader() {
+  return (
+    <div className="flex items-center justify-center py-20 bg-white rounded-xl border border-gray-100 shadow-sm">
+      <Loader className="w-6 h-6 text-green-500 animate-spin" />
     </div>
   );
 }

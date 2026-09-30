@@ -558,6 +558,22 @@ const sales = {
   listStock: () => requests.get<any>(`/sales/stock`),
   createStock: (data: any) => requests.post<any>(`/sales/stock`, data),
   deleteStock: (id: string) => requests.delete<any>(`/sales/stock/${id}`),
+
+  // Fresh Produce — Packhouse Intake
+  listProduceIntake: () => requests.get<any>(`/sales/produce/intake`),
+  createProduceIntake: (data: any) => requests.post<any>(`/sales/produce/intake`, data),
+  deleteProduceIntake: (id: string) => requests.delete<any>(`/sales/produce/intake/${id}`),
+
+  // Fresh Produce — Sales
+  listProduceSales: () => requests.get<any>(`/sales/produce/records`),
+  createProduceSale: (data: any) => requests.post<any>(`/sales/produce/records`, data),
+  deleteProduceSale: (id: string) => requests.delete<any>(`/sales/produce/records/${id}`),
+
+  // Fresh Produce — Weekly Sales Summary
+  listProduceWeekly: () => requests.get<any>(`/sales/produce/weekly-summaries`),
+  createProduceWeekly: (data: any) => requests.post<any>(`/sales/produce/weekly-summaries`, data),
+  deleteProduceWeekly: (id: string) =>
+    requests.delete<any>(`/sales/produce/weekly-summaries/${id}`),
 };
 
 const apiHandler = {
